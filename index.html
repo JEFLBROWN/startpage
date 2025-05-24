@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Startpage</title>
+<style>
+:root{
+  --bg:#0d0d0f;
+  --text:#e7e7e7;
+  --accent:#3d7fff;
+  --night:#555;
+  font-family:"Inter",system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:center;}
+
+/* centered column layout */
+#wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:880px;padding:1rem;gap:1.5rem;text-align:center;}
+
+/* clocks */
+#clocks{display:flex;gap:1rem;width:100%;justify-content:space-between;flex-wrap:wrap;}
+.clock{flex:1 1 calc(20% - 1rem);min-width:90px;display:flex;flex-direction:column;align-items:center;gap:.25rem;}
+.clock .city{font-weight:600;font-size:.95rem;}
+.clock .time{font-size:1.25rem;letter-spacing:.4px;}
+.clock.night .time,.clock.night .city{color:var(--night);} /* dim at night */
+
+/* Pantone swatch */
+#swatch{width:100%;max-height:55vh;border-radius:8px;cursor:default;}
+#pantone-info{margin-top:.5rem;font-size:.9rem;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* weather */
+#weather{display:grid;grid-template-columns:repeat(7,1fr);gap:.6rem;width:100%;font-size:.75rem;}
+.day{display:flex;flex-direction:column;align-items:center;gap:.25rem;}
+.day svg{width:30px;height:30px;stroke:var(--text);stroke-width:2px;fill:none;}
+.day .temps{font-weight:600;font-size:.8rem;}
+
+/* stocks */
+#stocks{display:flex;gap:1rem;width:100%;justify-content:center;font-size:.85rem;}
+.ticker{display:flex;align-items:center;gap:.25rem;}
+.ticker .arrow{font-size:.9rem;}
+.ticker.up{color:#4ade80;} /* green */
+.ticker.down{color:#f87171;} /* red */
+
+/* links */
+#links{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;width:100%;}
+#links a{text-decoration:none;color:var(--text);font-size:.95rem;border-bottom:1px solid transparent;padding:.45rem 0;transition:border-color .2s;}
+#links a:hover{border-color:var(--accent);} 
+</style>
+<script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+  <div id="wrap">
+    <!-- World Clocks -->
+    <div id="clocks">
+      <div class="clock" data-offset="-7"><span class="city">Seattle</span><span class="time">--:--</span></div>
+      <div class="clock" data-offset="-4" data-home="true"><span class="city">Atlanta</span><span class="time">--:--</span></div>
+      <div class="clock" data-offset="2"><span class="city">Paris</span><span class="time">--:--</span></div>
+      <div class="clock" data-offset="3"><span class="city">Minsk</span><span class="time">--:--</span></div>
+      <div class="clock" data-offset="9"><span class="city">Tokyo</span><span class="time">--:--</span></div>
+    </div>
+
+    <!-- Pantone Color of the Day -->
+    <div id="color-block"><div id="swatch"></div><div id="pantone-info"></div></div>
+
+    <!-- Weather forecast -->
+    <div id="weather"></div>
+
+    <!-- Stock ticker -->
+    <div id="stocks"></div>
+
+    <!-- Quick Links -->
+    <div id="links">
+      <a href="https://github.com" target="_blank">GitHub</a>
+      <a href="https://mail.google.com" target="_blank">Gmail</a>
+      <a href="https://calendar.google.com" target="_blank">Calendar</a>
+      <a href="https://chat.openai.com" target="_blank">ChatGPT</a>
+    </div>
+  </div>
+
+<script>
+/****************** PANTONE COLOR *****************/
+function pantoneForToday(){const d=new Date().toISOString().split('T')[0];const h=[...d].reduce((a,c)=>a+c.charCodeAt(0),0)%360;const s=60,l=50;return{hsl:`hsl(${h},${s}%,${l}%)`,name:`Pantone ${h}-${s}-${l}`};}
+function renderPantone(){const p=pantoneForToday();document.getElementById('swatch').style.background=p.hsl;document.getElementById('pantone-info').textContent=`${p.name} – ${p.hsl}`;}
+renderPantone();
+
+/****************** CLOCKS *****************/
+function updateClocks(){document.querySelectorAll('.clock').forEach(cl=>{const off=+cl.dataset.offset;const now=new Date();const utc=Date.now()+now.getTimezoneOffset()*60000;const t=new Date(utc+3600000*off);const hours=t.getHours();const mins=t.getMinutes().toString().padStart(2,'0');cl.querySelector('.time').textContent=`${hours.toString().padStart(2,'0')}:${mins}`;cl.classList.toggle('night',hours>=18||hours<6);});}
+setInterval(updateClocks,1000);updateClocks();
+
+/****************** WEATHER (weather.gov) *****************/
+const LAT=33.9316, LON=-84.0177;
+const iconMap={Sun:"sun",Clear:"sun",Cloud:"cloud",Overcast:"cloud",Rain:"cloud-rain",Showers:"cloud-drizzle",Thunder:"cloud-lightning",Snow:"cloud-snow",Fog:"cloud"};
+async function loadWeather(){try{const point=await fetch(`https://api.weather.gov/points/${LAT},${LON}`).then(r=>r.json());const fc=await fetch(point.properties.forecast).then(r=>r.json());const periods=fc.properties.periods;const daily={};periods.forEach(p=>{const d=p.startTime.split('T')[0];daily[d]=daily[d]||{hi:null,lo:null,cond:p.shortForecast};if(p.isDaytime)daily[d].hi=p.temperature;else daily[d].lo=p.temperature;});const now=new Date().toISOString().split('T')[0];const days=Object.keys(daily).filter(d=>d>=now).slice(0,7);
+  const w=document.getElementById('weather');w.innerHTML='';days.forEach(d=>{const o=daily[d];const dt=new Date(d);const wd=dt.toLocaleDateString([], {weekday:'short'});const md=dt.toLocaleDateString([], {month:'numeric',day:'numeric'});const key=Object.keys(iconMap).find(k=>o.cond.includes(k))||'Cloud';const icon=iconMap[key];w.insertAdjacentHTML('beforeend',`<div class='day'><div>${wd}</div><div>${md}</div><i data-feather='${icon}'></i><div class='temps'>${o.hi??'-'}° / ${o.lo??'-'}°</div></div>`);});feather.replace();}catch(e){console.warn('weather',e);} }
+loadWeather();
+
+/****************** STOCK TICKERS (stooq) *****************/
+const symbols=[{t:"RIVN",q:"rivn.us"},{t:"AAPL",q:"aapl.us"},{t:"NVDA",q:"nvda.us"},{t:"NTDOY",q:"ntdoy.us"}];
+async function loadStocks(){try{const qs=symbols.map(s=>s.q).join(',');const url=`https://stooq.com/q/l/?s=${qs}&f=sd2ohlcvnad&h&e=csv`;
+  const csv=await fetch(url).then(r=>r.text());const rows=csv.trim().split(/\n+/).slice(1);const data=rows.map(r=>{const [sym,date,time,open,high,low,close,vol,name]=r.split(',');return{sym,close:+close,open:+open};});const wrap=document.getElementById('stocks');wrap.innerHTML='';data.forEach(d=>{const diff=d.close-d.open;const dir=diff>=0?'up':'down';const arrow=dir==='up'?"▲":"▼";wrap.insertAdjacentHTML('beforeend',`<div class='ticker ${dir}'><span>${d.sym}</span><span>$${d.close.toFixed(2)}</span><span class='arrow'>${arrow}</span></div>`);});}catch(e){console.warn('stocks',e);} }
+loadStocks();
+</script>
+</body>
+</html>
