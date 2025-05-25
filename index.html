@@ -12,6 +12,12 @@
   --night:#555;
   font-family:"Inter",system-ui,sans-serif;
 }
+/* light theme overrides */
+:root.light{
+  --bg:#f8f8fa;
+  --text:#1a1a1a;
+  --night:#9e9e9e;
+}
 *{margin:0;padding:0;box-sizing:border-box}
 body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:center;}
 
@@ -19,7 +25,7 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
 
 /* clocks */
 #clocks{display:flex;gap:1rem;width:100%;justify-content:space-between;flex-wrap:wrap;}
-.clock{flex:1 1 calc(20% - 1rem);min-width:90px;display:flex;flex-direction:column;align-items:center;gap:.2rem;}
+.clock{flex:1 1 calc(20% - 1rem);min-width:90px;display:flex;flex-direction:column;align-items:center;gap:.2rem;cursor:default;user-select:none;}
 .clock .city{font-weight:600;font-size:.95rem;}
 .clock .time{font-size:1.2rem;letter-spacing:.4px;}
 .clock.night .time,.clock.night .city{color:var(--night);} 
@@ -39,6 +45,7 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
   display:flex;
   flex-direction:column;
   justify-content:flex-end;
+  cursor:pointer;
 }
 #swatch .color-area{
   flex:1;
@@ -53,6 +60,19 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
   color:black;
   text-align:left;
   font-weight:500;
+  user-select:none;
+}
+#copy-toast{
+  position:absolute;
+  top:8px;right:8px;
+  background:rgba(0,0,0,.6);
+  color:white;
+  font-size:.7rem;
+  padding:.25rem .4rem;
+  border-radius:4px;
+  opacity:0;
+  transition:opacity .3s;
+  pointer-events:none;
 }
 
 /* stocks */
@@ -72,10 +92,22 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
 .day{display:flex;flex-direction:column;align-items:center;gap:.25rem;}
 .day svg{width:30px;height:30px;stroke:var(--text);stroke-width:2px;fill:none;}
 .day .temps{font-weight:600;font-size:.8rem;}
+
+/* theme toggle */
+#theme-toggle{
+  position:fixed;
+  top:10px;right:10px;
+  background:transparent;
+  border:none;
+  color:var(--text);
+  font-size:1.2rem;
+  cursor:pointer;
+}
 </style>
 <script src="https://unpkg.com/feather-icons"></script>
 </head>
 <body>
+  <button id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">🌗</button>
   <div id="wrap">
     <!-- World Clocks -->
     <div id="clocks">
@@ -92,6 +124,7 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
       <div id="swatch">
         <div class="color-area" id="swatch-color"></div>
         <div id="pantone-info"></div>
+        <span id="copy-toast">copied!</span>
       </div>
 
       <!-- Right column -->
@@ -109,19 +142,35 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
     <!-- Weather forecast below -->
     <div id="weather"></div>
   </div>
-
+  
 <script>
+/****************** SETTINGS *****************/
+const settings={
+  coords:{lat:33.9316,lon:-84.0177},
+  stocks:[{t:"RIVN",q:"rivn.us"},{t:"AAPL",q:"aapl.us"},{t:"NVDA",q:"nvda.us"},{t:"NTDOY",q:"ntdoy.us"}],
+  links:{g:"https://github.com",m:"https://mail.google.com",c:"https://calendar.google.com",p:"https://chat.openai.com"}
+};
+
+/****************** THEME *****************/
+const root=document.documentElement;
+(function initTheme(){
+  const saved=localStorage.getItem("theme");
+  if(saved) root.classList.toggle("light",saved==="light");
+})();
+function toggleTheme(){
+  root.classList.toggle("light");
+  localStorage.setItem("theme",root.classList.contains("light")?"light":"dark");
+}
+document.getElementById("theme-toggle").addEventListener("click",toggleTheme);
+
 /****************** PANTONE COLOR *****************/
+let currentPantone;
 function pantoneForToday(){
   const d=new Date().toISOString().split('T')[0];
   const h=[...d].reduce((a,c)=>a+c.charCodeAt(0),0)%360;
   const s=60,l=50;
   const hex=hslToHex(h,s,l);
-  return{
-    hsl:`hsl(${h},${s}%,${l}%)`,
-    hex,
-    name:`Pantone ${h}-${s}-${l}`
-  };
+  return{hsl:`hsl(${h},${s}%,${l}%)`,hex,name:`Pantone ${h}-${s}-${l}`};
 }
 function hslToHex(h,s,l){
   s/=100;l/=100;
@@ -130,14 +179,22 @@ function hslToHex(h,s,l){
   const f=n=>Math.round((l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1))))*255).toString(16).padStart(2,'0');
   return`#${f(0)}${f(8)}${f(4)}`.toUpperCase();
 }
+function flashCopy(){
+  const toast=document.getElementById('copy-toast');
+  toast.style.opacity=1;
+  setTimeout(()=>toast.style.opacity=0,1000);
+}
 function renderPantone(){
-  const p=pantoneForToday();
+  currentPantone=pantoneForToday();
   const colorArea=document.getElementById('swatch-color');
-  colorArea.style.background=`linear-gradient(rgba(128,128,128,0.25), rgba(128,128,128,0.25)), ${p.hsl}`;
-  document.getElementById('pantone-info').textContent=`${p.name} – ${p.hex}`;
+  colorArea.style.background=`linear-gradient(rgba(128,128,128,0.25), rgba(128,128,128,0.25)), ${currentPantone.hsl}`;
+  document.getElementById('pantone-info').textContent=`${currentPantone.name} – ${currentPantone.hex}`;
   document.body.style.backgroundColor=`hsl(${new Date().getDate()*12 % 360},30%,8%)`;
 }
 renderPantone();
+document.getElementById('swatch').addEventListener('click',()=>{
+  navigator.clipboard.writeText(currentPantone.hex).then(flashCopy);
+});
 
 /****************** CLOCKS *****************/
 function updateClocks(){
@@ -154,11 +211,12 @@ function updateClocks(){
 setInterval(updateClocks,1000);updateClocks();
 
 /****************** WEATHER (weather.gov) *****************/
-const LAT=33.9316, LON=-84.0177;
 const iconMap={Sun:"sun",Clear:"sun",Cloud:"cloud",Overcast:"cloud",Rain:"cloud-rain",Showers:"cloud-drizzle",Thunder:"cloud-lightning",Snow:"cloud-snow",Fog:"cloud"};
 async function loadWeather(){
+  const {lat,lon}=settings.coords;
+  const w=document.getElementById('weather');
   try{
-    const p=await fetch(`https://api.weather.gov/points/${LAT},${LON}`).then(r=>r.json());
+    const p=await fetch(`https://api.weather.gov/points/${lat},${lon}`).then(r=>r.json());
     const fc=await fetch(p.properties.forecast).then(r=>r.json());
     const periods=fc.properties.periods;
     const daily={};
@@ -169,7 +227,6 @@ async function loadWeather(){
     });
     const today=new Date().toISOString().split('T')[0];
     const days=Object.keys(daily).filter(d=>d>=today).slice(0,7);
-    const w=document.getElementById('weather');
     w.innerHTML='';
     days.forEach(d=>{
       const o=daily[d];
@@ -181,15 +238,18 @@ async function loadWeather(){
       w.insertAdjacentHTML('beforeend',`<div class='day'><div>${wd}</div><div>${md}</div><i data-feather='${icon}'></i><div class='temps'>${o.hi??'-'}° / ${o.lo??'-'}°</div></div>`);
     });
     feather.replace();
-  }catch(e){console.warn('weather',e);}
+  }catch(e){
+    console.warn('weather',e);
+    w.innerHTML=`<span style='font-size:.85rem'>⚠️ weather unavailable <button onclick='loadWeather()'>↻</button></span>`;
+  }
 }
 loadWeather();
 
 /****************** STOCK TICKERS (stooq) *****************/
-const symbols=[{t:"RIVN",q:"rivn.us"},{t:"AAPL",q:"aapl.us"},{t:"NVDA",q:"nvda.us"},{t:"NTDOY",q:"ntdoy.us"}];
 async function loadStocks(){
+  const wrap=document.getElementById('stocks');
   try{
-    const qs=symbols.map(s=>s.q).join(',');
+    const qs=settings.stocks.map(s=>s.q).join(',');
     const url=`https://stooq.com/q/l/?s=${qs}&f=sd2ohlcvnad&h&e=csv`;
     const csv=await fetch(url).then(r=>r.text());
     const rows=csv.trim().split(/\n+/).slice(1);
@@ -197,7 +257,6 @@ async function loadStocks(){
       const [sym,date,time,open,high,low,close]=r.split(',');
       return{sym,close:+close,open:+open};
     });
-    const wrap=document.getElementById('stocks');
     wrap.innerHTML='';
     data.forEach(d=>{
       const diff=d.close-d.open;
@@ -205,9 +264,19 @@ async function loadStocks(){
       const arrow=dir==='up'?"▲":"▼";
       wrap.insertAdjacentHTML('beforeend',`<div class='ticker ${dir}'><span>${d.sym}</span><span>$${d.close.toFixed(2)}</span><span class='arrow'>${arrow}</span></div>`);
     });
-  }catch(e){console.warn('stocks',e);}
+  }catch(e){
+    console.warn('stocks',e);
+    wrap.innerHTML=`⚠️ stocks unavailable <button onclick='loadStocks()'>↻</button>`;
+  }
 }
 loadStocks();
+
+/****************** KEYBOARD SHORTCUTS *****************/
+document.addEventListener('keydown',e=>{
+  if(e.target.closest('input,textarea')) return; // don't hijack typing
+  const url=settings.links[e.key];
+  if(url) window.open(url,'_blank');
+});
 </script>
 </body>
 </html>
