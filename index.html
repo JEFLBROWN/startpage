@@ -6,37 +6,37 @@
 <title>Startpage</title>
 <style>
 :root{
-  --bg:#0d0d0f;
+  --bg:#1a1a1a;
   --text:#e7e7e7;
   --accent:#3d7fff;
-  --night:#555;
+  --night:#333;
   font-family:"Inter",system-ui,sans-serif;
 }
-/* light theme overrides */
-:root.light{
-  --bg:#f8f8fa;
-  --text:#1a1a1a;
-  --night:#9e9e9e;
-}
 *{margin:0;padding:0;box-sizing:border-box}
-body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-content:center;align-items:center;}
+body{min-height:100vh;background:var(--bg);color:var(--text);padding:1rem;}
 
-#wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:900px;padding:1rem;gap:1.5rem;text-align:center;}
+#wrap{display:flex;flex-direction:column;align-items:center;width:100%;max-width:1200px;margin:0 auto;gap:2rem;}
 
-/* clocks */
-#clocks{display:flex;gap:1rem;width:100%;justify-content:space-between;flex-wrap:wrap;}
-.clock{flex:1 1 calc(20% - 1rem);min-width:90px;display:flex;flex-direction:column;align-items:center;gap:.2rem;cursor:default;user-select:none;}
-.clock .city{font-weight:600;font-size:.95rem;}
-.clock .time{font-size:1.2rem;letter-spacing:.4px;}
+/* main clock and date */
+#main-clock{text-align:center;margin-bottom:1rem;}
+#main-time{font-size:clamp(3rem,8vw,6rem);font-weight:300;letter-spacing:.1em;line-height:1;}
+#main-date{font-size:clamp(1rem,2.5vw,1.5rem);color:#aaa;margin-top:.5rem;}
+
+/* world clocks */
+#clocks{display:flex;gap:.5rem;width:100%;justify-content:center;flex-wrap:wrap;margin-bottom:1rem;}
+.clock{flex:1 1 auto;min-width:90px;max-width:150px;display:flex;flex-direction:column;align-items:center;gap:.1rem;cursor:default;user-select:none;}
+.clock .city{font-weight:600;font-size:clamp(.9rem,2vw,1.1rem);}
+.clock .time{font-size:clamp(1.1rem,2.5vw,1.4rem);letter-spacing:.4px;}
 .clock.night .time,.clock.night .city{color:var(--night);} 
 
-/* main row */
-#main{display:flex;gap:2rem;width:100%;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+/* main content area */
+#main{display:grid;grid-template-columns:1fr 2fr;gap:2rem;width:100%;align-items:start;}
 
 /* pantone swatch */
 #swatch{
-  width:260px;
-  height:260px;
+  width:100%;
+  max-width:280px;
+  aspect-ratio:1;
   border-radius:8px;
   position:relative;
   overflow:hidden;
@@ -54,13 +54,19 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
   transition:background .3s;
 }
 #pantone-info{
-  padding:.6rem;
-  font-size:.85rem;
+  padding:.8rem;
+  font-size:clamp(.9rem,2vw,1rem);
   background:white;
   color:black;
   text-align:left;
   font-weight:500;
   user-select:none;
+}
+#pantone-info .pantone-label{
+  font-size:clamp(1.2rem,3vw,1.4rem);
+  font-weight:700;
+  display:block;
+  margin-bottom:.1rem;
 }
 #copy-toast{
   position:absolute;
@@ -75,52 +81,70 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
   pointer-events:none;
 }
 
-/* stocks */
-#stocks{display:flex;gap:1rem;font-size:.85rem;justify-content:center;margin-bottom:1rem;flex-wrap:wrap;}
-.ticker{display:flex;align-items:center;gap:.25rem;}
-.ticker .arrow{font-size:.9rem;}
-.ticker.up{color:#4ade80;}
-.ticker.down{color:#f87171;}
+/* right column content */
+#right-col{display:flex;flex-direction:column;gap:1.5rem;width:100%;}
 
 /* links */
-#links{display:grid;grid-template-columns:repeat(2,1fr);gap:.75rem;width:260px;}
-#links a{text-decoration:none;color:var(--text);font-size:.95rem;border-bottom:1px solid transparent;padding:.45rem 0;transition:border-color .2s;}
-#links a:hover{border-color:var(--accent);} 
+#links{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem .75rem;width:100%;}
+#links a{
+  text-decoration:none;
+  color:var(--text);
+  font-size:clamp(.95rem,2vw,1.1rem);
+  padding:.5rem 0;
+  transition:color .2s;
+  display:flex;
+  align-items:center;
+  gap:.5rem;
+  text-align:left;
+}
+#links a:hover{color:var(--accent);}
+#links a .icon{width:16px;height:16px;flex-shrink:0;}
+#links a .key{text-decoration:underline;}
 
 /* weather */
-#weather{display:grid;grid-template-columns:repeat(7,1fr);gap:.6rem;width:100%;font-size:.75rem;}
-.day{display:flex;flex-direction:column;align-items:center;gap:.25rem;}
-.day svg{width:30px;height:30px;stroke:var(--text);stroke-width:2px;fill:none;}
+#weather{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:.2rem;width:100%;font-size:clamp(.8rem,1.8vw,.9rem);margin-top:1rem;}
+.day{display:flex;flex-direction:column;align-items:center;gap:.15rem;padding:.5rem .3rem;background:transparent;aspect-ratio:3/4;}
+.day svg{width:clamp(24px,5vw,30px);height:clamp(24px,5vw,30px);stroke:var(--text);stroke-width:2px;fill:none;}
 .day .temps{font-weight:600;font-size:.8rem;}
 
-/* theme toggle */
-#theme-toggle{
-  position:fixed;
-  top:10px;right:10px;
-  background:transparent;
-  border:none;
-  color:var(--text);
-  font-size:1.2rem;
-  cursor:pointer;
+/* responsive adjustments */
+@media (max-width: 768px) {
+  #main{grid-template-columns:1fr;gap:1.5rem;}
+  #swatch{max-width:240px;margin:0 auto;}
+  #links{grid-template-columns:repeat(2,1fr);}
+  #weather{grid-template-columns:repeat(7,1fr);}
+}
+
+@media (max-width: 480px) {
+  body{padding:.5rem;}
+  #wrap{gap:1.5rem;}
+  #clocks{gap:.25rem;}
+  .clock{min-width:70px;}
+  #links{grid-template-columns:1fr;}
+  #weather{grid-template-columns:repeat(4,1fr);}
 }
 </style>
 <script src="https://unpkg.com/feather-icons"></script>
 </head>
 <body>
-  <button id="theme-toggle" title="Toggle theme" aria-label="Toggle theme">🌗</button>
   <div id="wrap">
-    <!-- World Clocks -->
-    <div id="clocks">
-      <div class="clock" data-offset="9"><span class="city">Tokyo</span><span class="time">--:--</span></div>
-      <div class="clock" data-offset="-7"><span class="city">Seattle</span><span class="time">--:--</span></div>
-      <div class="clock" data-offset="-4" data-home="true"><span class="city">Atlanta</span><span class="time">--:--</span></div>
-      <div class="clock" data-offset="2"><span class="city">Paris</span><span class="time">--:--</span></div>
-      <div class="clock" data-offset="3"><span class="city">Minsk</span><span class="time">--:--</span></div>
+    <!-- Main Clock and Date -->
+    <div id="main-clock">
+      <div id="main-time">--:--</div>
+      <div id="main-date">--</div>
     </div>
 
-    <!-- Main content row -->
+    <!-- World Clocks -->
+    <div id="clocks">
+			<div class="clock" data-offset="9"><span class="city">Tokyo</span><span class="time">--:--</span></div>
+      <div class="clock" data-offset="-7"><span class="city">Seattle</span><span class="time">--:--</span></div>
+			<div class="clock" data-offset="2"><span class="city">Paris</span><span class="time">--:--</span></div>
+			<div class="clock" data-offset="3"><span class="city">Minsk</span><span class="time">--:--</span></div>
+    </div>
+
+    <!-- Main content area -->
     <div id="main">
-      <!-- Pantone swatch left -->
+      <!-- Pantone swatch -->
       <div id="swatch">
         <div class="color-area" id="swatch-color"></div>
         <div id="pantone-info"></div>
@@ -128,18 +152,49 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
       </div>
 
       <!-- Right column -->
-      <div id="right-col" style="display:flex;flex-direction:column;align-items:center;">
-        <div id="stocks"></div>
+      <div id="right-col">
         <div id="links">
-          <a href="https://github.com" target="_blank">GitHub</a>
-          <a href="https://mail.google.com" target="_blank">Gmail</a>
-          <a href="https://calendar.google.com" target="_blank">Calendar</a>
-          <a href="https://chat.openai.com" target="_blank">ChatGPT</a>
+          <a href="https://bsky.app" data-key="b">
+            <i data-feather="twitter" class="icon"></i>
+            <span><span class="key">B</span>luesky</span>
+          </a>
+          <a href="https://calendar.google.com" data-key="c">
+            <i data-feather="calendar" class="icon"></i>
+            <span><span class="key">C</span>alendar</span>
+          </a>
+          <a href="https://chat.openai.com" data-key="p">
+            <i data-feather="message-circle" class="icon"></i>
+            <span>Chat<span class="key">G</span>PT</span>
+          </a>
+          <a href="https://feedly.com" data-key="f">
+            <i data-feather="rss" class="icon"></i>
+            <span><span class="key">F</span>eedly</span>
+          </a>
+          <a href="https://github.com" data-key="g">
+            <i data-feather="github" class="icon"></i>
+            <span><span class="key">G</span>itHub</span>
+          </a>
+          <a href="https://mail.google.com" data-key="m">
+            <i data-feather="mail" class="icon"></i>
+            <span><span class="key">M</span>ail</span>
+          </a>
+          <a href="https://cad.onshape.com" data-key="o">
+            <i data-feather="box" class="icon"></i>
+            <span><span class="key">O</span>nShape</span>
+          </a>
+          <a href="https://reddit.com" data-key="r">
+            <i data-feather="message-square" class="icon"></i>
+            <span><span class="key">R</span>eddit</span>
+          </a>
+          <a href="https://youtube.com" data-key="y">
+            <i data-feather="play" class="icon"></i>
+            <span><span class="key">Y</span>ouTube</span>
+          </a>
         </div>
       </div>
     </div>
 
-    <!-- Weather forecast below -->
+    <!-- Weather forecast -->
     <div id="weather"></div>
   </div>
   
@@ -147,21 +202,18 @@ body{height:100vh;background:var(--bg);color:var(--text);display:flex;justify-co
 /****************** SETTINGS *****************/
 const settings={
   coords:{lat:33.9316,lon:-84.0177},
-  stocks:[{t:"RIVN",q:"rivn.us"},{t:"AAPL",q:"aapl.us"},{t:"NVDA",q:"nvda.us"},{t:"NTDOY",q:"ntdoy.us"}],
-  links:{g:"https://github.com",m:"https://mail.google.com",c:"https://calendar.google.com",p:"https://chat.openai.com"}
 };
 
-/****************** THEME *****************/
-const root=document.documentElement;
-(function initTheme(){
-  const saved=localStorage.getItem("theme");
-  if(saved) root.classList.toggle("light",saved==="light");
-})();
-function toggleTheme(){
-  root.classList.toggle("light");
-  localStorage.setItem("theme",root.classList.contains("light")?"light":"dark");
+/****************** MAIN CLOCK *****************/
+function updateMainClock(){
+  const now = new Date();
+  const time = now.toLocaleTimeString('en-US', {hour12: false, hour: '2-digit', minute: '2-digit'});
+  const date = now.toLocaleDateString('en-US', {weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'});
+  document.getElementById('main-time').textContent = time;
+  document.getElementById('main-date').textContent = date;
 }
-document.getElementById("theme-toggle").addEventListener("click",toggleTheme);
+setInterval(updateMainClock, 1000);
+updateMainClock();
 
 /****************** PANTONE COLOR *****************/
 let currentPantone;
@@ -170,7 +222,7 @@ function pantoneForToday(){
   const h=[...d].reduce((a,c)=>a+c.charCodeAt(0),0)%360;
   const s=60,l=50;
   const hex=hslToHex(h,s,l);
-  return{hsl:`hsl(${h},${s}%,${l}%)`,hex,name:`Pantone ${h}-${s}-${l}`};
+  return{hsl:`hsl(${h},${s}%,${l}%)`,hex,name:`Pantone ${h}-${s}-${l}`,hue:h,sat:s,light:l};
 }
 function hslToHex(h,s,l){
   s/=100;l/=100;
@@ -188,8 +240,11 @@ function renderPantone(){
   currentPantone=pantoneForToday();
   const colorArea=document.getElementById('swatch-color');
   colorArea.style.background=`linear-gradient(rgba(128,128,128,0.25), rgba(128,128,128,0.25)), ${currentPantone.hsl}`;
-  document.getElementById('pantone-info').textContent=`${currentPantone.name} – ${currentPantone.hex}`;
-  document.body.style.backgroundColor=`hsl(${new Date().getDate()*12 % 360},30%,8%)`;
+  document.getElementById('pantone-info').innerHTML=`<span class="pantone-label">PANTONE</span>${currentPantone.name.replace('Pantone ', '')} – ${currentPantone.hex}`;
+  
+  // Update body background with transparent version of pantone color over dark grey
+  const transparentPantoneColor = `hsla(${currentPantone.hue}, ${Math.max(currentPantone.sat - 30, 15)}%, ${Math.max(currentPantone.light - 30, 10)}%, 0.08)`;
+  document.body.style.background = `linear-gradient(${transparentPantoneColor}, ${transparentPantoneColor}), #0f0f0f`;
 }
 renderPantone();
 document.getElementById('swatch').addEventListener('click',()=>{
@@ -245,38 +300,18 @@ async function loadWeather(){
 }
 loadWeather();
 
-/****************** STOCK TICKERS (stooq) *****************/
-async function loadStocks(){
-  const wrap=document.getElementById('stocks');
-  try{
-    const qs=settings.stocks.map(s=>s.q).join(',');
-    const url=`https://stooq.com/q/l/?s=${qs}&f=sd2ohlcvnad&h&e=csv`;
-    const csv=await fetch(url).then(r=>r.text());
-    const rows=csv.trim().split(/\n+/).slice(1);
-    const data=rows.map(r=>{
-      const [sym,date,time,open,high,low,close]=r.split(',');
-      return{sym,close:+close,open:+open};
-    });
-    wrap.innerHTML='';
-    data.forEach(d=>{
-      const diff=d.close-d.open;
-      const dir=diff>=0?'up':'down';
-      const arrow=dir==='up'?"▲":"▼";
-      wrap.insertAdjacentHTML('beforeend',`<div class='ticker ${dir}'><span>${d.sym}</span><span>$${d.close.toFixed(2)}</span><span class='arrow'>${arrow}</span></div>`);
-    });
-  }catch(e){
-    console.warn('stocks',e);
-    wrap.innerHTML=`⚠️ stocks unavailable <button onclick='loadStocks()'>↻</button>`;
-  }
-}
-loadStocks();
-
 /****************** KEYBOARD SHORTCUTS *****************/
 document.addEventListener('keydown',e=>{
   if(e.target.closest('input,textarea')) return; // don't hijack typing
-  const url=settings.links[e.key];
-  if(url) window.open(url,'_blank');
+  const link = document.querySelector(`#links a[data-key="${e.key}"]`);
+  if(link) {
+    window.open(link.href,'_blank');
+    e.preventDefault();
+  }
 });
+
+// Initialize feather icons
+feather.replace();
 </script>
 </body>
 </html>
